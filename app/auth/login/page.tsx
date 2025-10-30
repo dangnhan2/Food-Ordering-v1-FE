@@ -15,6 +15,10 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Login } from "@/services/api"
+import { toast } from "sonner"
+import { useAuth } from "@/context/context"
+import { useRouter } from "next/navigation"
  
 const loginSchema = z.object({
   email: z.string().email({
@@ -28,6 +32,8 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
+  const {setUser} = useAuth();
+  const router = useRouter()
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -36,8 +42,20 @@ export default function LoginPage() {
     },
   })
 
-  const onSubmit = (values: LoginFormValues) => {
-    console.log(values)
+  const onSubmit = async (values: LoginFormValues) => {
+    let res = await Login(values.email, values.password);
+    if (res?.isSuccess && Number(res.statusCode) === 200) {
+      const token = res.data?.accessToken;
+      if (token) {
+        localStorage.setItem("access_token", token);
+        setUser(res.data?.data);
+      }
+      
+      toast.success(res.message);
+      router.push("/");
+    } else {
+      toast.error(res.message)
+    }
     // Handle login logic here
   }
 

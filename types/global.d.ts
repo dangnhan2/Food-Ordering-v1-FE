@@ -2,10 +2,10 @@ export {};
 
 declare global {
 interface IBackendRes<T> {
-    message: string | string[];
+    message: string;
     isSuccess : boolean;
     statusCode: number | string;
-    data?: T;
+    data?: T | null | undefined;
 }
 
     interface IModelPaginate<T> {
@@ -18,4 +18,20 @@ interface IBackendRes<T> {
         },       
     }
 
+    interface IAuthResponse {
+        accessToken : string
+        data : IUser
+    }
+    
+    interface IUser{
+        email : string
+        fullName : string
+        id : string
+        imageUrl : string
+        phoneNumber : string | null
+        role : string | null
+    }
+
 }
+
+
