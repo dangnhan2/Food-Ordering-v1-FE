@@ -4,6 +4,7 @@ import { z } from "zod"
 import Link from "next/link"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -15,11 +16,10 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Register } from "@/services/api"
+import { toast } from "sonner"
 
 const registerSchema = z.object({
-  fullName: z.string().min(2, {
-    message: "Họ và tên phải có ít nhất 2 ký tự.",
-  }),
   email: z.string().email({
     message: "Email không hợp lệ.",
   }),
@@ -29,9 +29,6 @@ const registerSchema = z.object({
   confirmPassword: z.string().min(6, {
     message: "Mật khẩu xác nhận phải có ít nhất 6 ký tự.",
   }),
-  terms: z.boolean().refine((value) => value === true, {
-    message: "Bạn cần đồng ý với Điều khoản dịch vụ và Chính sách bảo mật.",
-  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Mật khẩu không khớp.",
   path: ["confirmPassword"],
@@ -40,20 +37,25 @@ const registerSchema = z.object({
 type RegisterFormValues = z.infer<typeof registerSchema>
 
 export default function RegisterPage() {
+  const router = useRouter()
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      fullName: "",
       email: "",
       password: "",
       confirmPassword: "",
-      terms: false,
     },
   })
 
-  const onSubmit = (values: RegisterFormValues) => {
-    console.log(values)
-    // Handle register logic here
+  const onSubmit = async (values: RegisterFormValues) => {
+    let res = await Register(values.email, values.password, values.confirmPassword)
+
+    if (res?.isSuccess && Number(res.statusCode) === 201) {
+      toast.success(res.message);
+      router.push(`/auth/verify?flow=register&email=${encodeURIComponent(values.email)}`)
+    } else {
+      toast.error(res.message)
+    }
   }
 
   return (
