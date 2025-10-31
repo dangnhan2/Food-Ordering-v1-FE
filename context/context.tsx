@@ -9,12 +9,15 @@ interface AuthContextType {
     setUser: React.Dispatch<React.SetStateAction<IUser | undefined>>;
     accessToken: string | undefined;
     setAccessToken: React.Dispatch<React.SetStateAction<string | undefined>>;
+    isAuthen : boolean | undefined;
+    setIsAuthen : React.Dispatch<React.SetStateAction<boolean | undefined>>;
 }  
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({children} : {children: React.ReactNode}) => {
     const [user, setUser] = useState<IUser>();
     const [accessToken, setAccessToken] = useState<string | undefined>();
+    const [isAuthen, setIsAuthen] = useState<boolean | undefined>(false);
     
     useEffect(() => {
       if (typeof window !== "undefined") {
@@ -32,6 +35,7 @@ export const AuthProvider = ({children} : {children: React.ReactNode}) => {
             const access_token = res.data?.accessToken;
             if (access_token)
             localStorage.setItem("access_token", access_token);
+            setIsAuthen(true);
         }
        }catch(err){
         setUser(undefined);
@@ -55,7 +59,7 @@ export const AuthProvider = ({children} : {children: React.ReactNode}) => {
       }, [accessToken]);
     
       return (
-        <AuthContext.Provider value={{ user, setUser, accessToken, setAccessToken }}>
+        <AuthContext.Provider value={{ user, setUser, accessToken, setAccessToken, isAuthen, setIsAuthen }}>
           {children}
         </AuthContext.Provider>
       );
