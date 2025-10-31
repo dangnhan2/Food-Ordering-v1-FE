@@ -32,7 +32,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
-  const {setUser} = useAuth();
+  const {setUser, setIsAuthen} = useAuth();
   const router = useRouter()
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -43,16 +43,17 @@ export default function LoginPage() {
   })
 
   const onSubmit = async (values: LoginFormValues) => {
-    let res = await Login(values.email, values.password);
+    let res = await Login(values.email, values.password)
     if (res?.isSuccess && Number(res.statusCode) === 200) {
-      const token = res.data?.accessToken;
+      const token = res.data?.accessToken
       if (token) {
-        localStorage.setItem("access_token", token);
-        setUser(res.data?.data);
+        localStorage.setItem("access_token", token)
+        setUser(res.data?.data)
+        setIsAuthen(true)
       }
       
-      toast.success(res.message);
-      router.push("/");
+      toast.success(res.message)
+      router.push("/")
     } else {
       toast.error(res.message)
     }

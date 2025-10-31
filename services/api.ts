@@ -17,10 +17,10 @@ export const RefreshToken = () => {
 }
 
 export const Logout = () => {
-    return axios.post(`/api/Auth/logout`);
+    return axios.post<IBackendRes<null>>(`/api/Auth/logout`);
 }
 
-export const ChangePassword = (id : string, currentPassword : string, newPassword: string, confirmPassword : string) => {
+export const ChangePassword = (id : string | undefined, currentPassword : string, newPassword: string, confirmPassword : string) => {
     return axios.post(`/api/Auth/change-password`, {id, currentPassword, newPassword, confirmPassword});
 }
 
@@ -30,4 +30,16 @@ export const ForgetPassword = (email : string) => {
 
 export const ResetPassword = (email : string, newPassword: string, confirmPassword : string) => {
     return axios.post<IBackendRes<null>>(`/api/Auth/reset-password`, {email, newPassword, confirmPassword});
+}
+
+export const GetAddresses = (id : string) => {
+    return axios.get<IBackendRes<IAddress[]>>(`/api/Common/user/${id}/addresses`);
+}
+
+export const AddAddress = (userId : string, address : string) => {
+    return axios.post<IBackendRes<null>>(`/api/Common/address`, {userId, address});
+}
+
+export const DeleteAddress = (id : string) => {
+    return axios.delete<IBackendRes<null>>(`/api/Common/address/${id}`);
 }

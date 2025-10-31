@@ -1,9 +1,11 @@
+import Header from "@/components/Header";
+
 const PublicLayout = ({ children }: { children: React.ReactNode }) => {
     return (
-        <div>
-            <h1>Public Layout</h1>
-            {children}
-        </div>
+        <>
+            <Header />
+            <main>{children}</main>
+        </>
     )
 }
 

@@ -32,6 +32,11 @@ interface IBackendRes<T> {
         role : string | null
     }
 
+    interface IAddress{
+        id : string
+        address : string
+    }
+
 }
 
 

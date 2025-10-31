@@ -1,12 +1,4 @@
-import { useAuth } from "@/context/context"
+"use client";
 
-const HomePage = () => {
-    const {user} = useAuth();
-    return (
-        <div>
-            <h1>{user?.fullName}</h1>
-        </div>
-    )
+export default function Home() { 
 }
-
-export default HomePage
