@@ -26,7 +26,7 @@ interface IBackendRes<T> {
     interface IUser{
         email : string
         fullName : string
-        id : string
+        id : string | undefined
         imageUrl : string
         phoneNumber : string | null
         role : string | null

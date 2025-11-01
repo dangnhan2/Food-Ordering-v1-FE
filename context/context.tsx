@@ -11,6 +11,7 @@ interface AuthContextType {
     setAccessToken: React.Dispatch<React.SetStateAction<string | undefined>>;
     isAuthen : boolean | undefined;
     setIsAuthen : React.Dispatch<React.SetStateAction<boolean | undefined>>;
+    refresh : () => Promise<void>;
 }  
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -59,7 +60,7 @@ export const AuthProvider = ({children} : {children: React.ReactNode}) => {
       }, [accessToken]);
     
       return (
-        <AuthContext.Provider value={{ user, setUser, accessToken, setAccessToken, isAuthen, setIsAuthen }}>
+        <AuthContext.Provider value={{ user, setUser, accessToken, setAccessToken, isAuthen, setIsAuthen, refresh }}>
           {children}
         </AuthContext.Provider>
       );
