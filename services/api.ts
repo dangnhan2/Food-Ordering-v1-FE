@@ -40,6 +40,24 @@ export const AddAddress = (userId : string, address : string) => {
     return axios.post<IBackendRes<null>>(`/api/Common/address`, {userId, address});
 }
 
+export const UpdateAddress = (id : string, userId : string, address : string) => {
+    return axios.put<IBackendRes<null>>(`/api/Common/address/${id}`, {userId, address});
+}
+
 export const DeleteAddress = (id : string) => {
     return axios.delete<IBackendRes<null>>(`/api/Common/address/${id}`);
+}
+
+export const UpdateProfile = (id : string | undefined, fullName : string, phoneNumber : string, avatar : File | undefined) => {
+    const formData = new FormData();
+    formData.append("fullName", fullName);
+    formData.append("phoneNumber", phoneNumber);
+    if (avatar) {
+        formData.append("avatar", avatar);
+    }
+    return axios.put<IBackendRes<null>>(`/api/Common/user/account/${id}`, formData);
+}
+
+export const GetUserById = (id : string | undefined) => {
+    return axios.get<IBackendRes<IUser>>(`/api/Common/user/${id}`);
 }
