@@ -58,6 +58,30 @@ export const UpdateProfile = (id : string | undefined, fullName : string, phoneN
     return axios.put<IBackendRes<null>>(`/api/Common/user/account/${id}`, formData);
 }
 
+export const GetCategories = () => {
+    return axios.get<IBackendRes<ICategory[]>>(`/api/Common/categories`);
+}
+
+export const AddCategory = (name : string) => {
+    return axios.post<IBackendRes<null>>(`/api/Common/category`, {name});
+}
+
+export const UpdateCategory = (id : string, name : string) => {
+    return axios.put<IBackendRes<null>>(`/api/Common/category/${id}`, {name});
+}
+
+export const DeleteCategory = (id : string) => {
+    return axios.delete<IBackendRes<null>>(`/api/Common/category/${id}`);
+}
+
+export const GetFoodItems = (query : string | undefined) => {
+    return axios.get<IBackendRes<IModelPaginate<IFoodItem>>>(`/api/Common/menus?${query}`);
+}
+
 export const GetUserById = (id : string | undefined) => {
     return axios.get<IBackendRes<IUser>>(`/api/Common/user/${id}`);
+}
+
+export const GetCartByUser = (id :string) => {
+    return axios.get<IBackendRes<ICart>>(`/api/Common/cart?id=${id}`);
 }
