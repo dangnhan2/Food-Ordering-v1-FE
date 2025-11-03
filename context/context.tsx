@@ -1,6 +1,6 @@
 "use client";
 
-import { RefreshToken } from "@/services/api";
+import { GetCartByUser, RefreshToken } from "@/services/api";
 import { useState, createContext, useContext, useEffect } from "react";
 import axios from "@services/interceptor";
 
@@ -12,6 +12,8 @@ interface AuthContextType {
     isAuthen : boolean | undefined;
     setIsAuthen : React.Dispatch<React.SetStateAction<boolean | undefined>>;
     refresh : () => Promise<void>;
+    cart : ICart | undefined;
+    setCart : React.Dispatch<React.SetStateAction<ICart | undefined>>;
 }  
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,13 +21,29 @@ export const AuthProvider = ({children} : {children: React.ReactNode}) => {
     const [user, setUser] = useState<IUser>();
     const [accessToken, setAccessToken] = useState<string | undefined>();
     const [isAuthen, setIsAuthen] = useState<boolean | undefined>(false);
-    
+    const [cart, setCart] = useState<ICart>();
+
     useEffect(() => {
       if (typeof window !== "undefined") {
         const token = localStorage.getItem("access_token");
         if (token) setAccessToken(token);
       }
     }, []);
+
+    useEffect(() => {
+      const id = user?.id
+      if (id){
+        const fetchCart = async () => {
+          let res = await GetCartByUser(id)         
+          if (res.isSuccess && Number(res.statusCode) === 200){
+            if (res.data)
+            setCart(res.data)
+          }
+        }
+
+        fetchCart();
+      }    
+    }, [user?.id]);
     
     const refresh = async () => {
        try{
@@ -60,7 +78,7 @@ export const AuthProvider = ({children} : {children: React.ReactNode}) => {
       }, [accessToken]);
     
       return (
-        <AuthContext.Provider value={{ user, setUser, accessToken, setAccessToken, isAuthen, setIsAuthen, refresh }}>
+        <AuthContext.Provider value={{ user, setUser, accessToken, setAccessToken, isAuthen, setIsAuthen, refresh, cart, setCart }}>
           {children}
         </AuthContext.Provider>
       );

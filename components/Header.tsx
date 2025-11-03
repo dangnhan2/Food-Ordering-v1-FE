@@ -10,7 +10,7 @@ import { Logout } from "@/services/api";
 import { toast } from "sonner";
 
 const Header = () => {
-  const { user, isAuthen, setAccessToken, setIsAuthen, setUser } = useAuth();
+  const { user, isAuthen, setAccessToken, setIsAuthen, setUser, cart } = useAuth();
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -53,9 +53,20 @@ const Header = () => {
         </nav>
       </div>
       <div className="flex items-center gap-4">
-        <Link href="/cart">
-          <FaShoppingCart size={22} className="hover:text-primary transition-colors"/>
-        </Link>
+        
+          
+          {cart?.items.length > 0 ? 
+            <Link href="/cart" className="relative">
+              <FaShoppingCart size={22} className="hover:text-primary transition-colors"/>
+              <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-black text-white text-[10px] leading-5 text-center">
+              {cart?.items.length} 
+              </span>
+            </Link> :  
+           <Link href="/cart" className="relative">
+              <FaShoppingCart size={22} className="hover:text-primary transition-colors"/>
+           </Link>
+          }
+          
         {isAuthen === true ? (
           <UserMenu fullName={user?.fullName} avatarUrl={user?.imageUrl} onLogout={handleLogout} />
         ) : (
