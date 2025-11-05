@@ -14,6 +14,7 @@ interface AuthContextType {
     refresh : () => Promise<void>;
     cart : ICart | undefined;
     setCart : React.Dispatch<React.SetStateAction<ICart | undefined>>;
+    fetchCart : () => Promise<void>;
 }  
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,20 +30,20 @@ export const AuthProvider = ({children} : {children: React.ReactNode}) => {
         if (token) setAccessToken(token);
       }
     }, []);
-
-    useEffect(() => {
+    
+    const fetchCart = async () => {
       const id = user?.id
       if (id){
-        const fetchCart = async () => {
-          let res = await GetCartByUser(id)         
-          if (res.isSuccess && Number(res.statusCode) === 200){
-            if (res.data)
-            setCart(res.data)
-          }
+        let res = await GetCartByUser(id)         
+        if (res.isSuccess && Number(res.statusCode) === 200){
+          if (res.data)
+          setCart(res.data)
         }
+      }        
+    }
 
-        fetchCart();
-      }    
+    useEffect(() => {
+      fetchCart()      
     }, [user?.id]);
     
     const refresh = async () => {
@@ -78,7 +79,7 @@ export const AuthProvider = ({children} : {children: React.ReactNode}) => {
       }, [accessToken]);
     
       return (
-        <AuthContext.Provider value={{ user, setUser, accessToken, setAccessToken, isAuthen, setIsAuthen, refresh, cart, setCart }}>
+        <AuthContext.Provider value={{ user, setUser, accessToken, setAccessToken, isAuthen, setIsAuthen, refresh, cart, setCart, fetchCart }}>
           {children}
         </AuthContext.Provider>
       );

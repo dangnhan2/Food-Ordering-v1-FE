@@ -85,3 +85,11 @@ export const GetUserById = (id : string | undefined) => {
 export const GetCartByUser = (id :string) => {
     return axios.get<IBackendRes<ICart>>(`/api/Common/cart?id=${id}`);
 }
+
+export const AddToCart = (userId : string, cartItems : ICartItemRequest[]) => {
+    return axios.post<IBackendRes<null>>(`/api/Common/cart`, {userId, cartItems});
+}
+
+export const GetVouchers = () => {
+    return axios.get<IBackendRes<IVoucher[]>>(`/api/Common/user/vouchers`);
+}
