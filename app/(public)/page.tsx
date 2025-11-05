@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Plus } from "lucide-react";
-import { GetCategories, GetFoodItems } from "@/services/api";
+import { AddToCart, GetCategories, GetFoodItems } from "@/services/api";
 import {
   Pagination,
   PaginationContent,
@@ -18,9 +18,10 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { useAuth } from "@/context/context";
+import { toast } from "sonner";
 
 export default function Home() {
-  const {cart} = useAuth();
+  const {user, fetchCart} = useAuth();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedSort, setSelectedSort] = useState("Mặc định");
   const [categories, setCategories] = useState<ICategory[] | null | undefined>();
@@ -58,7 +59,7 @@ export default function Home() {
         sortParam = "&sortBy=price&sortOrder=desc"
         break
       case "Bán chạy nhất":
-        sortParam = "popular"
+        sortParam = "&sortBy=soldQuantity&sortOrder=desc"
         break;
       case "Mặc đinh":
         sortParam = ""
@@ -78,6 +79,20 @@ export default function Home() {
     }
   }
 
+  const handleAddToCart = async (item: IFoodItem) => {
+    if (!user?.id) return;
+    const cartItems: ICartItemRequest[] = [
+      { menuId: item.id, quantity: 1, unitPrice: item.price }
+    ];
+    let res =  await AddToCart(user.id, cartItems)
+    if (res.isSuccess && Number(res.statusCode) === 201){
+      toast.success(res.message)
+      fetchCart()
+    }else{
+      toast.error(res.message)
+    }
+  }
+
   useEffect(() => {
     fetchFoodItems();
   }, [page, pageSize, searchTerm, selectedCategory, selectedSort]);
@@ -89,7 +104,7 @@ export default function Home() {
   const sortOptions = [
     "Mặc định",
     "Giá: Thấp đến cao",
-    "Price: Cao đến thấp",
+    "Giá: Cao đến thấp",
     "Bán chạy nhất",
   ];
 
@@ -141,7 +156,7 @@ export default function Home() {
                   Menu
                 </h2>
                 <div className="space-y-2">
-                <button
+                <button                 
                       key="All"
                       onClick={() => {
                         // Toggle: if same category is clicked, reset to "All"
@@ -149,7 +164,7 @@ export default function Home() {
                           "All"
                         );
                       }}
-                      className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${
+                      className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors cursor-pointer ${
                         selectedCategory === "All"
                           ? "bg-black text-white"
                           : "text-gray-700 hover:bg-gray-100"
@@ -240,7 +255,7 @@ export default function Home() {
                         <div className="text-xl font-bold text-gray-900">
                           {item.price.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})}
                         </div>
-                        <Button className="bg-black text-white hover:bg-black/90 rounded-md px-4 py-2 h-9 flex items-center gap-1.5">
+                        <Button className="bg-black text-white hover:bg-black/90 rounded-md px-4 py-2 h-9 flex items-center gap-1.5 cursor-pointer" onClick={() => {handleAddToCart(item)}}>
                           <Plus className="h-4 w-4" />
                           Thêm vào giỏ hàng
                         </Button>

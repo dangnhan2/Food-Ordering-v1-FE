@@ -65,6 +65,28 @@ declare global {
         quantity : number
         unitPrice : number
     }
+
+    interface ICartItemRequest{
+        menuId : string
+        quantity : number
+        unitPrice : number
+    }
+
+    interface IVoucher {
+        id : string
+        code : string
+        description : string
+        discountType : string
+        discountValue : number
+        maxDiscount : number
+        minOrderAmount : number
+        startDate : string
+        endDate : string
+        usageLimit : number
+        usedCount : number
+        perUserLimit : number
+        isActive : boolean
+    }
 }
 
 
