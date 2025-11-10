@@ -32,6 +32,8 @@ declare global {
     interface IAddress {
         id: string
         address: string
+        fullName?: string
+        phoneNumber?: string
     }
 
     interface ICategory {
@@ -87,6 +89,19 @@ declare global {
         perUserLimit : number
         isActive : boolean
     }
+
+    interface IOrderInfo {
+        orderCode : string
+        checkoutUrl : string
+        qrCode : string
+        amount : number
+    }
+
+    interface IVoucherValidationInfo{
+        discountAmount : number
+        totalAmount :number
+    }
 }
+
 
 

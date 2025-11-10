@@ -2,13 +2,14 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/context/context";
 import UserAvatar from "@/components/UserAvatar";
-import { Trash2, MapPin } from "lucide-react";
+import { Trash2, MapPin, Edit2, Phone, User } from "lucide-react";
 import { ChangePassword, DeleteAddress, GetAddresses, UpdateProfile, AddAddress, UpdateAddress } from "@/services/api";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -47,6 +48,8 @@ const ProfilePage = () => {
   // Schema thêm địa chỉ
   const addressSchema = z.object({
     address: z.string().min(5, "Địa chỉ phải có ít nhất 5 ký tự"),
+    fullName: z.string().min(2, "Họ và tên phải có ít nhất 2 ký tự"),
+    phoneNumber: z.string().min(10, "Số điện thoại phải có ít nhất 10 số"),
   });
 
   type AddressValues = z.infer<typeof addressSchema>;
@@ -55,6 +58,8 @@ const ProfilePage = () => {
     resolver: zodResolver(addressSchema),
     defaultValues: {
       address: "",
+      fullName: "",
+      phoneNumber: "",
     },
   });
 
@@ -62,6 +67,8 @@ const ProfilePage = () => {
     resolver: zodResolver(addressSchema),
     defaultValues: {
       address: "",
+      fullName: "",
+      phoneNumber: "",
     },
   });
 
@@ -123,12 +130,11 @@ const ProfilePage = () => {
 
   const handleAddAddress = async (values: AddressValues) => {
     if (user?.id){
-      let res = await AddAddress(user.id, values.address);
+      let res = await AddAddress(user.id, values.address, values.fullName, values.phoneNumber);
       if (res.isSuccess && Number(res.statusCode) === 201) {
         toast.success(res.message);
-        fetchAddress();
+        await fetchAddress();
         setIsAddAddressOpen(false);
-        addressForm.reset();
       } else {
         toast.error(res.message);
       }
@@ -137,13 +143,17 @@ const ProfilePage = () => {
 
   const handleUpdateClick = (address: IAddress) => {
     setAddressToUpdate(address);
-    updateAddressForm.reset({ address: address.address });
+    updateAddressForm.reset({ 
+      address: address.address,
+      fullName: address.fullName || "",
+      phoneNumber: address.phoneNumber || "",
+    });
     setIsUpdateAddressOpen(true);
   };
 
   const handleUpdateAddress = async (values: AddressValues) => {
     if (addressToUpdate?.id && user?.id) {
-      let res = await UpdateAddress(addressToUpdate.id, user.id, values.address);
+      let res = await UpdateAddress(addressToUpdate.id, user.id, values.address, values.fullName, values.phoneNumber);
       if (res.isSuccess && Number(res.statusCode) === 200) {
         toast.success(res.message);
         fetchAddress();
@@ -214,6 +224,18 @@ const ProfilePage = () => {
       fetchAddress()
     }
   }, [user?.id]);
+
+  // Reset form khi mở dialog thêm địa chỉ
+  useEffect(() => {
+    if (isAddAddressOpen) {
+      addressForm.reset({
+        address: "",
+        fullName: "",
+        phoneNumber: "",
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAddAddressOpen]);
 
   // Cleanup preview URL khi component unmount
   useEffect(() => {
@@ -392,6 +414,32 @@ const ProfilePage = () => {
                     <form onSubmit={addressForm.handleSubmit(handleAddAddress)} className="space-y-4">
                       <FormField
                         control={addressForm.control}
+                        name="fullName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Họ và tên</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Nguyễn Văn A" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={addressForm.control}
+                        name="phoneNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Số điện thoại</FormLabel>
+                            <FormControl>
+                              <Input placeholder="0123456789" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={addressForm.control}
                         name="address"
                         render={({ field }) => (
                           <FormItem>
@@ -409,7 +457,6 @@ const ProfilePage = () => {
                           variant="outline"
                           onClick={() => {
                             setIsAddAddressOpen(false);
-                            addressForm.reset();
                           }}
                         >
                           Hủy
@@ -422,39 +469,78 @@ const ProfilePage = () => {
               </Dialog>
             </div>
 
-            <div className="rounded-xl border">
+            <div className="space-y-4">
               {Array.isArray(addresses) && addresses.length === 0 ? (
-                <div className="flex flex-col items-center py-10 text-center">
-                  <div className="mb-4 grid h-12 w-12 place-items-center rounded-full border bg-muted/50">
-                    <MapPin className="h-6 w-6 text-muted-foreground" />
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed bg-muted/30 py-16 text-center">
+                  <div className="mb-4 grid h-16 w-16 place-items-center rounded-full border-2 border-dashed bg-background">
+                    <MapPin className="h-8 w-8 text-muted-foreground" />
                   </div>
-                  <h4 className="font-semibold">Bạn chưa có địa chỉ nào</h4>
-                  <p className="text-sm text-muted-foreground">Thêm địa chỉ giao hàng đầu tiên để đặt hàng nhanh hơn.</p>
+                  <h4 className="mb-2 text-lg font-semibold">Bạn chưa có địa chỉ nào</h4>
+                  <p className="max-w-sm text-sm text-muted-foreground">
+                    Thêm địa chỉ giao hàng đầu tiên để đặt hàng nhanh hơn và thuận tiện hơn.
+                  </p>
                 </div>
               ) : (
-                addresses?.map((a, idx) => (
-                  <div key={a.id} className={`flex items-center justify-between px-5 py-4 ${idx !== 0 ? "border-t" : ""}`}>
-                    <p className="font-medium">{a.address}</p>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive"
-                        onClick={() => handleUpdateClick(a)}
-                      >                       
-                        Cập nhật
-                      </Button>
+                addresses?.map((a) => (
+                  <Card key={a.id} className="group hover:shadow-md transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        {/* Icon */}
+                        <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          <MapPin className="h-5 w-5" />
+                        </div>
 
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive"
-                        onClick={() => handleDeleteClick(a)}
-                      >                       
-                        Xóa
-                      </Button>
-                    </div>
-                  </div>
+                        {/* Address Info */}
+                        <div className="flex-1 space-y-3">
+                          {/* Full Name and Phone */}
+                          <div className="flex flex-wrap items-center gap-4 text-sm">
+                            {a.fullName && (
+                              <div className="flex items-center gap-2 text-foreground">
+                                <User className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium">{a.fullName}</span>
+                              </div>
+                            )}
+                            {a.phoneNumber && (
+                              <div className="flex items-center gap-2 text-foreground">
+                                <Phone className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium">{a.phoneNumber}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Address */}
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium text-muted-foreground">Địa chỉ</p>
+                            <p className="text-base font-medium leading-relaxed text-foreground">
+                              {a.address}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex shrink-0 gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9 w-9 p-0"
+                            onClick={() => handleUpdateClick(a)}
+                            title="Cập nhật"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9 w-9 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDeleteClick(a)}
+                            title="Xóa"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))
               )}
             </div>
@@ -470,6 +556,32 @@ const ProfilePage = () => {
                 </DialogHeader>
                 <Form {...updateAddressForm}>
                   <form onSubmit={updateAddressForm.handleSubmit(handleUpdateAddress)} className="space-y-4">
+                    <FormField
+                      control={updateAddressForm.control}
+                      name="fullName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Họ và tên</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Nguyễn Văn A" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={updateAddressForm.control}
+                      name="phoneNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Số điện thoại</FormLabel>
+                          <FormControl>
+                            <Input placeholder="0123456789" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={updateAddressForm.control}
                       name="address"

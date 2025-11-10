@@ -36,8 +36,6 @@ const CartPage = () => {
         (sum, item) => sum + item.unitPrice * item.quantity, 0
     );
     const totalQuantity = localItems.reduce((sum, item) => sum + item.quantity, 0);
-    const tax = subtotal * TAX_RATE;
-    const total = subtotal + tax;
 
     // ✅ Hàm gửi API và đồng bộ
     const syncCartWithServer = useCallback(async (itemsToSend: ICartItemRequest[]) => {
@@ -190,7 +188,7 @@ const CartPage = () => {
                         <div className="flex items-center gap-4">
                             <div className="text-right">
                                 <p className="text-sm text-gray-500">Tổng Thanh Toán:</p>
-                                <p className="text-2xl font-extrabold text-black">{formatCurrency(total)}</p>
+                                <p className="text-2xl font-extrabold text-black">{formatCurrency(subtotal)}</p>
                             </div>
                             <Button
                                 onClick={handleCheckout}
