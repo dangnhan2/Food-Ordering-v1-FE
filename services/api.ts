@@ -36,12 +36,12 @@ export const GetAddresses = (id : string) => {
     return axios.get<IBackendRes<IAddress[]>>(`/api/Common/user/${id}/addresses`);
 }
 
-export const AddAddress = (userId : string, address : string) => {
-    return axios.post<IBackendRes<null>>(`/api/Common/address`, {userId, address});
+export const AddAddress = (userId : string, address : string, fullName : string, phoneNumber : string) => {
+    return axios.post<IBackendRes<null>>(`/api/Common/address`, {userId, address, fullName, phoneNumber});
 }
 
-export const UpdateAddress = (id : string, userId : string, address : string) => {
-    return axios.put<IBackendRes<null>>(`/api/Common/address/${id}`, {userId, address});
+export const UpdateAddress = (id : string, userId : string, address : string, fullName : string, phoneNumber : string) => {
+    return axios.put<IBackendRes<null>>(`/api/Common/address/${id}`, {userId, address, fullName, phoneNumber});
 }
 
 export const DeleteAddress = (id : string) => {
@@ -92,4 +92,16 @@ export const AddToCart = (userId : string, cartItems : ICartItemRequest[]) => {
 
 export const GetVouchers = () => {
     return axios.get<IBackendRes<IVoucher[]>>(`/api/Common/user/vouchers`);
+}
+
+export const ValidateVoucher = (userId : string, voucherId : string) => {
+    return axios.post<IBackendRes<IVoucherValidationInfo>>(`/api/Common/user/voucher/validation`, {userId, voucherId});
+}
+
+export const CreateOrderWithQR = (userId : string, voucherId : string | null | undefined, addressId : string, note : string | null | undefined, paymentMethod : string, totalAmount : number) => {
+    return axios.post<IBackendRes<IOrderInfo>>(`/api/Common/order/qr`, {userId, voucherId, addressId, note, paymentMethod, totalAmount});
+}
+
+export const CreateOrderWithCOD = (userId : string, voucherId : string | null | undefined, addressId : string, note : string | null | undefined, paymentMethod : string, totalAmount : number) => {
+    return axios.post<IBackendRes<Number>>(`/api/Common/order/cod`, {userId, voucherId, addressId, note, paymentMethod, totalAmount});
 }
