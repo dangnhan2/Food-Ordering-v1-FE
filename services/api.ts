@@ -105,3 +105,7 @@ export const CreateOrderWithQR = (userId : string, voucherId : string | null | u
 export const CreateOrderWithCOD = (userId : string, voucherId : string | null | undefined, addressId : string, note : string | null | undefined, paymentMethod : string, totalAmount : number) => {
     return axios.post<IBackendRes<Number>>(`/api/Common/order/cod`, {userId, voucherId, addressId, note, paymentMethod, totalAmount});
 }
+
+export const GetOrdersByUser = (userId : string, query : string) => {
+    return axios.get<IBackendRes<IModelPaginate<IOrderHistory>>>(`/api/Common/user/${userId}/orders?${query}`)
+}

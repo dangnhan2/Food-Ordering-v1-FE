@@ -55,7 +55,7 @@ export default function Home() {
       case "Giá: Thấp đến cao":
         sortParam = "&sortBy=price&sortOrder=asc"
         break
-      case "Price: Cao đến thấp":
+      case "Giá: Cao đến thấp":
         sortParam = "&sortBy=price&sortOrder=desc"
         break
       case "Bán chạy nhất":

@@ -47,7 +47,7 @@ const UserMenu = ({ fullName, avatarUrl, onLogout }: UserMenuProps) => {
             </Link>
             
             <Link
-              href="/orders"
+              href="/purchase"
               className="block px-4 py-2 hover:bg-gray-50"
               onClick={() => setOpen(false)}
             >

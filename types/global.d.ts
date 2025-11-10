@@ -101,6 +101,28 @@ declare global {
         discountAmount : number
         totalAmount :number
     }
+
+    interface IOrderHistory{
+        id : string
+        userId : string
+        orderDate : string
+        fullName : string
+        phoneNumber : string
+        address : string
+        orderStatus : number
+        totalAmount : number
+        transactionCode : number
+        menus : IItemHistory[] 
+    }
+
+    interface IItemHistory{
+        id : string
+        menuId : string
+        menuName : string
+        menuImage : string
+        quantity : number
+        subPrice : number
+    }
 }
 
 
