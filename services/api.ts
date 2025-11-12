@@ -9,7 +9,7 @@ export const Register = (email: string, password : string, confirmPassword : str
 }
 
 export const VerifyEmail = (email : string, otp : string) => {
-    return axios.post<IBackendRes<string>>(`/api/Auth/verify-email`, {email, otp});
+    return axios.post<IBackendRes<string>>(`/api/Auth/email/verify`, {email, otp});
 }
 
 export const RefreshToken = () => {
@@ -76,6 +76,10 @@ export const DeleteCategory = (id : string) => {
 
 export const GetFoodItems = (query : string | undefined) => {
     return axios.get<IBackendRes<IModelPaginate<IFoodItem>>>(`/api/Common/menus?${query}`);
+}
+
+export const GetFoodItemById = (id : string) => {
+    return axios.get<IBackendRes<IFoodItem>>(`/api/Common/menu/${id}`);
 }
 
 export const GetUserById = (id : string | undefined) => {
