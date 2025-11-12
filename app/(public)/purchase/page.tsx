@@ -84,8 +84,8 @@ const OrderHistoryPage = () => {
     fetchOrders();
   }, [user?.id, page, pageSize, total]);
 
-  const handleOrderAgain =  (id : string) => {
-      router.push(`/product/${id}`)
+  const handleOrderAgain = (menuId: string) => {
+    router.push(`/product/${menuId}`);
   };
 
   return (
@@ -159,7 +159,9 @@ const OrderHistoryPage = () => {
                         {order.menus && order.menus.length > 0 ? (
                           order.menus.map((item) => (
                             <div key={item.id} className="flex items-center gap-4">
-                              <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
+                              <div 
+                                className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 bg-gray-100 cursor-pointer hover:opacity-80 transition-opacity"                                                   
+                              >
                                 <Image
                                   src={item.menuImage}
                                   alt={item.menuName}
@@ -168,7 +170,9 @@ const OrderHistoryPage = () => {
                                   sizes="64px"
                                 />
                               </div>
-                              <div className="flex-1 min-w-0">
+                              <div 
+                                className="flex-1 min-w-0 cursor-pointer hover:text-gray-600 transition-colors"                                                     
+                              >
                                 <p className="text-base font-medium text-gray-900 mb-1">
                                   {item.menuName}
                                 </p>
@@ -185,7 +189,10 @@ const OrderHistoryPage = () => {
                                 <Button
                                   variant="outline"
                                   className="bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200 hover:border-gray-300 rounded-md"
-                                  onClick={() => handleOrderAgain(item.id)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOrderAgain(item.menuId);
+                                  }}
                                 >
                                   Đặt lại
                                 </Button>

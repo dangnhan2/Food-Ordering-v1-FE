@@ -19,9 +19,11 @@ import {
 } from "@/components/ui/pagination";
 import { useAuth } from "@/context/context";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   const {user, fetchCart} = useAuth();
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedSort, setSelectedSort] = useState("Mặc định");
   const [categories, setCategories] = useState<ICategory[] | null | undefined>();
@@ -59,7 +61,7 @@ export default function Home() {
         sortParam = "&sortBy=price&sortOrder=desc"
         break
       case "Bán chạy nhất":
-        sortParam = "&sortBy=soldQuantity&sortOrder=desc"
+        sortParam = "&sortBy=soldquantity&sortOrder=desc"
         break;
       case "Mặc đinh":
         sortParam = ""
@@ -224,7 +226,8 @@ export default function Home() {
                   {items?.map((item) => (
                     <Card
                       key={item.id}
-                      className="overflow-hidden shadow-md hover:shadow-lg transition-shadow"
+                      className="overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+                      onClick={() => router.push(`/product/${item.id}`)}
                     >
                       {/* Image Section */}
                       <div className="relative aspect-[16/9]">
@@ -255,7 +258,13 @@ export default function Home() {
                         <div className="text-xl font-bold text-gray-900">
                           {item.price.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})}
                         </div>
-                        <Button className="bg-black text-white hover:bg-black/90 rounded-md px-4 py-2 h-9 flex items-center gap-1.5 cursor-pointer" onClick={() => {handleAddToCart(item)}}>
+                        <Button 
+                          className="bg-black text-white hover:bg-black/90 rounded-md px-4 py-2 h-9 flex items-center gap-1.5 cursor-pointer" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddToCart(item);
+                          }}
+                        >
                           <Plus className="h-4 w-4" />
                           Thêm vào giỏ hàng
                         </Button>
