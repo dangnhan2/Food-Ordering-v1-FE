@@ -78,6 +78,14 @@ export const GetFoodItems = (query : string | undefined) => {
     return axios.get<IBackendRes<IModelPaginate<IFoodItem>>>(`/api/Common/menus?${query}`);
 }
 
+export const GetFeaturedFoodItems = () => {
+    return axios.get<IBackendRes<IFoodItem[]>>(`/api/Common/menus/featured`);
+}
+
+export const GetRecommendedFoodItems = (id : string) => {
+    return axios.get<IBackendRes<IFoodItem[]>>(`/api/Common/menus/${id}/related`);
+}
+
 export const GetFoodItemById = (id : string) => {
     return axios.get<IBackendRes<IFoodItem>>(`/api/Common/menu/${id}`);
 }
