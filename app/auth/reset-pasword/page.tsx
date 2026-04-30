@@ -41,7 +41,6 @@ function ResetPasswordPageContent({ email }: { email?: string }) {
 
   const onSubmit = async (values: ResetPasswordValues) => {
     let res = await ResetPassword(finalEmail, values.newPassword, values.confirmPassword);
-    console.log(res);
     if (res.isSuccess && Number(res.statusCode) === 201){
       toast.success(res.message)
       router.push("/auth/login")

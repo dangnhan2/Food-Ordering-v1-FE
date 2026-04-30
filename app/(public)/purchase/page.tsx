@@ -9,41 +9,34 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import PaginationControl from "@/components/common/PaginationControl";
 import { useAuth } from "@/context/context";
-import { CancelOrder, GetOrdersByUser, RatingMenu } from "@/services/api";
+import { GetOrdersByUser, RatingMenu } from "@/services/api";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { GetBanks } from "@/services/external_api";
 
 // Map order status number to display text and badge variant
 const getOrderStatus = (status: number): { text: string; variant: "default" | "secondary" | "destructive" | "outline" } => {
   switch (status) {
     case 1:
-      // Đã thanh toán: màu nổi bật (primary)
       return { text: "Đã thanh toán", variant: "default" };
     case 2:
-      // Hết hạn thanh toán: đỏ cảnh báo
       return { text: "Hết hạn thanh toán", variant: "destructive" };
     case 3:
-      // Đã hủy: viền xám trung tính
       return { text: "Đã hủy", variant: "outline" };
     case 4:
-      // Hoàn tiền: màu phụ, không quá cảnh báo
       return { text: "Hoàn tiền", variant: "secondary" };
     case 5:
-      // Đã xác nhận: cũng là trạng thái tốt, dùng primary
       return { text: "Đã xác nhận đơn hàng", variant: "default" };
     default:
       return { text: "Không xác định", variant: "outline" };
   }
 };
 
-// Format date to display format (e.g., "Monday, November 10, 2025 at 05:02 PM")
+// Format date to display format
 const formatDate = (dateString: string | undefined | null): string => {
   if (!dateString) return "N/A";
 
@@ -60,7 +53,7 @@ const formatDate = (dateString: string | undefined | null): string => {
   const timeStr = date.toLocaleTimeString("vi-VN", {
     hour: "2-digit",
     minute: "2-digit",
-    hour12: false, // Nếu muốn 24h
+    hour12: false,
   });
 
   return `${dateStr} lúc ${timeStr}`;
@@ -81,14 +74,6 @@ const OrderHistoryPage = () => {
   const [reviewImages, setReviewImages] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-  const [orderToCancel, setOrderToCancel] = useState<IOrderHistory | null>(null);
-  const [cancelReason, setCancelReason] = useState("");
-  // Danh sách ngân hàng nhận về từ API bên thứ 3
-  const [banks, setBanks] = useState<IBankData[]>([]);
-  const [selectedBankBin, setSelectedBankBin] = useState("");
-  const [bankAccountNumber, setBankAccountNumber] = useState("");
-  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -117,105 +102,6 @@ const OrderHistoryPage = () => {
       return method.toUpperCase() === "QR";
     }
     return false;
-  };
-
-  const canCancelOrder = (order: IOrderHistory) => {
-    if (!order) return false;
-    // Chỉ cho hủy nếu đơn hàng đang ở trạng thái 1
-    return order.orderStatus === 1;
-  };
-
-  const fetchBanks = async () => {
-    try {
-      const result = await GetBanks();
-      // result.data có dạng: IBank = { code: string; desc: string; data: IBankData[] }
-      const bankResponse = result.data as IBank;
-      const list = bankResponse.data;
-      if (Array.isArray(list)) {
-        setBanks(list);
-      }
-    } catch (error) {
-      console.error("Error fetching banks:", error);
-      toast.error("Không thể tải danh sách ngân hàng");
-    }
-  };
-
-  const openCancelModal = async (order: IOrderHistory) => {
-    setOrderToCancel(order);
-    setCancelReason("");
-    setSelectedBankBin("");
-    setBankAccountNumber("");
-
-    // Nếu thanh toán QR thì cần lấy danh sách ngân hàng để chọn bank hoàn tiền
-    if (isQrPayment(order.paymentMethod)) {
-      if (banks.length === 0) {
-        await fetchBanks();
-      }
-    }
-
-    setIsCancelModalOpen(true);
-  };
-
-  const closeCancelModal = () => {
-    setIsCancelModalOpen(false);
-    setOrderToCancel(null);
-    setCancelReason("");
-    setSelectedBankBin("");
-    setBankAccountNumber("");
-    setIsCancelling(false);
-  };
-
-  const handleConfirmCancel = async () => {
-    if (!orderToCancel || !user?.id) return;
-
-    const isQr = isQrPayment(orderToCancel.paymentMethod);
-
-    if (isQr) {
-      if (!selectedBankBin) {
-        toast.error("Vui lòng chọn ngân hàng để hoàn tiền");
-        return;
-      }
-      if (!bankAccountNumber.trim()) {
-        toast.error("Vui lòng nhập số tài khoản ngân hàng");
-        return;
-      }
-    }
-
-    setIsCancelling(true);
-    try {
-      const paymentMethodValue = isQr ? 1 : 0;
-
-      const res = await CancelOrder(
-        orderToCancel.id,
-        user.id,
-        cancelReason || "Người dùng yêu cầu hủy đơn hàng",
-        paymentMethodValue,
-        isQr ? selectedBankBin : "",
-        isQr ? bankAccountNumber.trim() : ""
-      );
-
-      if (res.isSuccess && Number(res.statusCode) === 200) {
-        toast.success(res.message || "Hủy đơn hàng thành công");
-        closeCancelModal();
-
-        // Refresh orders list
-        if (user?.id) {
-          const query = `page=${page}&pageSize=${pageSize}`;
-          const refreshRes = await GetOrdersByUser(user.id, query);
-          if (refreshRes.isSuccess && Number(refreshRes.statusCode) === 200 && refreshRes.data) {
-            setOrders(refreshRes.data.data);
-            setTotal(refreshRes.data.total || 0);
-          }
-        }
-      } else {
-        toast.error(res.message || "Không thể hủy đơn hàng. Vui lòng thử lại");
-      }
-    } catch (error) {
-      console.error("Error cancelling order:", error);
-      toast.error("Không thể hủy đơn hàng. Vui lòng thử lại");
-    } finally {
-      setIsCancelling(false);
-    }
   };
 
   const handleOrderAgain = (menuId: string) => {
@@ -294,7 +180,6 @@ const OrderHistoryPage = () => {
       if (res.isSuccess && Number(res.statusCode) === 201) {
         toast.success(res.message || "Đã gửi đánh giá. Cảm ơn bạn!");
         closeReviewModal();
-        // Refresh orders to update isRated status
         if (user?.id) {
           const query = `page=${page}&pageSize=${pageSize}`;
           const refreshRes = await GetOrdersByUser(user.id, query);
@@ -317,7 +202,6 @@ const OrderHistoryPage = () => {
   return (
     <div className="min-h-screen bg-[#F7F7F8]">
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 py-8">
-        {/* Back to Home Link */}
         <Link
           href="/"
           className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors"
@@ -326,10 +210,8 @@ const OrderHistoryPage = () => {
           <span>Trở về trang chủ</span>
         </Link>
 
-        {/* Page Title */}
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Lịch sử đặt hàng</h1>
 
-        {/* Orders List */}
         {orders?.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">Chưa có đơn hàng nào</p>
@@ -345,12 +227,10 @@ const OrderHistoryPage = () => {
               {orders?.map((order) => {
                 const status = getOrderStatus(order.orderStatus);
                 const canReview = order.orderStatus === 1 || order.orderStatus === 3;
-                const canCancel = canCancelOrder(order);
                 const isQr = isQrPayment(order.paymentMethod);
                 return (
                   <Card key={order.id} className="shadow-lg border border-gray-100">
                     <CardContent className="p-6">
-                      {/* Order Header */}
                       <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-4 gap-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
@@ -371,11 +251,6 @@ const OrderHistoryPage = () => {
                           <p className="text-sm text-gray-500 mt-1">
                             {formatDate(order.orderDate)}
                           </p>
-                          {canCancel && (
-                            <p className="text-xs text-red-500 mt-1">
-                              Lưu ý: Bạn chỉ có thể hủy khi đơn hàng đang ở trạng thái &quot;Đã thanh toán&quot;.
-                            </p>
-                          )}
                         </div>
                         <div className="flex flex-col items-end gap-2 ml-0 md:ml-4">
                           <div className="text-right">
@@ -384,23 +259,6 @@ const OrderHistoryPage = () => {
                               {order.totalAmount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
                             </p>
                           </div>
-                          {canCancel && (
-                            <Button
-                              variant="outline"
-                              className="border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-600 text-sm"
-                              onClick={() => openCancelModal(order)}
-                            >
-                              Hủy đơn hàng
-                            </Button>
-                          )}
-                          {!canCancel && order.orderStatus !== 2 && (
-                            <p className="text-xs text-gray-400 max-w-xs text-right">
-                              Đơn hàng chỉ có thể hủy khi đang ở trạng thái &quot;Đã thanh toán&quot;.
-                            </p>
-                          )}
-                          {order.orderStatus === 2 && (
-                            <p className="text-xs text-red-500">Đơn hàng đã được hủy.</p>
-                          )}
                           {isQr && (
                             <p className="text-xs text-gray-500">
                               Phương thức thanh toán: QR
@@ -414,16 +272,14 @@ const OrderHistoryPage = () => {
                         </div>
                       </div>
 
-                      {/* Separator */}
                       <div className="border-t border-gray-200 my-4"></div>
 
-                      {/* Order Items */}
                       <div className="space-y-4">
                         {order.menus && order.menus.length > 0 ? (
                           order.menus.map((item) => (
                             <div key={item.id} className="flex items-center gap-4">
                               <div 
-                                className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 bg-gray-100 cursor-pointer hover:opacity-80 transition-opacity"                                                   
+                                className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 bg-gray-100 cursor-pointer hover:opacity-80 transition-opacity"
                               >
                                 <Image
                                   src={item.menuImage}
@@ -434,7 +290,7 @@ const OrderHistoryPage = () => {
                                 />
                               </div>
                               <div 
-                                className="flex-1 min-w-0 cursor-pointer hover:text-gray-600 transition-colors"                                                     
+                                className="flex-1 min-w-0 cursor-pointer hover:text-gray-600 transition-colors"
                               >
                                 <p className="text-base font-medium text-gray-900 mb-1">
                                   {item.menuName}
@@ -485,7 +341,6 @@ const OrderHistoryPage = () => {
                           </p>
                         )}
                       </div>
-
                     </CardContent>
                   </Card>
                 );
@@ -502,134 +357,6 @@ const OrderHistoryPage = () => {
           </>
         )}
       </div>
-
-      {/* Cancel Order Modal */}
-      <Dialog
-        open={isCancelModalOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            closeCancelModal();
-          } else {
-            setIsCancelModalOpen(true);
-          }
-        }}
-      >
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Hủy đơn hàng</DialogTitle>
-            <DialogDescription>
-              Đơn hàng chỉ có thể được hủy khi đang ở trạng thái <strong>Đã thanh toán</strong>. Vui lòng kiểm tra kỹ trước khi xác nhận.
-            </DialogDescription>
-          </DialogHeader>
-
-          {orderToCancel && (
-            <div className="space-y-4">
-              <div className="rounded-lg border border-gray-100 bg-gray-50 p-4">
-                <p className="text-sm font-semibold text-gray-900 mb-1">
-                  Đơn hàng #{orderToCancel.orderCode}
-                </p>
-                <p className="text-xs text-gray-500">
-                  Thời gian đặt: {formatDate(orderToCancel.orderDate)}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Tổng tiền:{" "}
-                  <span className="font-semibold text-gray-900">
-                    {orderToCancel.totalAmount.toLocaleString("vi-VN", {
-                      style: "currency",
-                      currency: "VND",
-                    })}
-                  </span>
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="cancel-reason">Lý do hủy đơn hàng (không bắt buộc)</Label>
-                <Textarea
-                  id="cancel-reason"
-                  placeholder="Vui lòng cho chúng tôi biết lý do bạn muốn hủy đơn..."
-                  rows={3}
-                  value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value)}
-                />
-              </div>
-
-              {isQrPayment(orderToCancel.paymentMethod) && (
-                <div className="space-y-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="refund-amount">Số tiền hoàn (tự động theo đơn hàng)</Label>
-                    <Input
-                      id="refund-amount"
-                      type="text"
-                      value={orderToCancel.totalAmount.toLocaleString("vi-VN", {
-                        style: "currency",
-                        currency: "VND",
-                      })}
-                      disabled
-                      readOnly
-                    />
-                    <p className="text-xs text-gray-500">
-                      Số tiền hoàn được lấy theo tổng tiền của đơn hàng và không thể chỉnh sửa.
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Ngân hàng nhận hoàn tiền</Label>
-                    <Select value={selectedBankBin} onValueChange={setSelectedBankBin}>
-                      <SelectTrigger className="w-full max-w-full">
-                        <SelectValue placeholder="-- Chọn ngân hàng --" />
-                      </SelectTrigger>
-                      <SelectContent
-                        className="w-[var(--radix-select-trigger-width)] max-h-60 sm:max-h-72 overflow-y-auto"
-                      >
-                        {banks.map((bank) => (
-                          <SelectItem
-                            key={bank.id}
-                            value={bank.bin}
-                            className="whitespace-normal text-sm"
-                          >
-                            {bank.shortName} - {bank.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="bank-account-number">Số tài khoản ngân hàng</Label>
-                    <Input
-                      id="bank-account-number"
-                      type="text"
-                      placeholder="Nhập số tài khoản để nhận tiền hoàn"
-                      value={bankAccountNumber}
-                      onChange={(e) => setBankAccountNumber(e.target.value)}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    Lưu ý: Tiền hoàn sẽ được chuyển về tài khoản ngân hàng bạn cung cấp ở trên.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          <DialogFooter className="space-y-2 sm:space-y-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={closeCancelModal}
-              disabled={isCancelling}
-            >
-              Đóng
-            </Button>
-            <Button
-              type="button"
-              className="bg-red-500 text-white hover:bg-red-600"
-              onClick={handleConfirmCancel}
-              disabled={isCancelling || !orderToCancel || !canCancelOrder(orderToCancel)}
-            >
-              {isCancelling ? "Đang hủy..." : "Xác nhận hủy đơn hàng"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog
         open={isReviewModalOpen}
@@ -718,7 +445,6 @@ const OrderHistoryPage = () => {
                 <div className="flex flex-wrap gap-3 pt-2">
                   {previewUrls.map((url, idx) => (
                     <div key={url} className="relative h-20 w-20 rounded-lg overflow-hidden border border-gray-200">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={url} alt={`Ảnh đánh giá ${idx + 1}`} className="h-full w-full object-cover" />
                       <button
                         type="button"

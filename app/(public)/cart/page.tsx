@@ -12,16 +12,14 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
-const TAX_RATE = 0.08;
-
 const CartPage = () => {
     const { cart, user, fetchCart } = useAuth();
     const router = useRouter();
 
     const cartItems = useMemo(() => cart?.items || [], [cart?.items]);
 
-    // ✅ Local state để control UI quantity (Optimistic Update)
     const [localItems, setLocalItems] = useState(cartItems);
+    const [isSyncing, setIsSyncing] = useState(false);
     
     // Sync khi cart từ context thay đổi (từ server)
     useEffect(() => {
@@ -38,7 +36,6 @@ const CartPage = () => {
     );
     const totalQuantity = localItems.reduce((sum, item) => sum + item.quantity, 0);
 
-    // ✅ Hàm gửi API và đồng bộ
     const syncCartWithServer = useCallback(async (itemsToSend: ICartItemRequest[]) => {
         if (!user?.id) return;
 
@@ -61,25 +58,39 @@ const CartPage = () => {
 
 
     // ✅ Hàm cập nhật số lượng
-    const handleQuantityChange = async (itemId: string, newQuantity: number) => {
-        if (!user?.id || !cart) return;
-        if (newQuantity < 1) return;
+    const getItemKey = (item: ICartItem) => item.menuId || item.id;
 
-        // 1. Optimistic Update (Cập nhật UI ngay)
-        const updatedLocal = localItems.map(item =>
-            item.id === itemId ? { ...item, quantity: newQuantity } : item
-        );
+    const handleQuantityChange = async (itemKey: string, delta: number) => {
+        if (!user?.id || !cart || isSyncing) return;
+
+        const currentItem = localItems.find((item) => getItemKey(item) === itemKey);
+        if (!currentItem) return;
+        if (delta === 0) return;
+
+        // 1. Optimistic Update (Cap nhat UI ngay)
+        const updatedLocal = localItems
+            .map((item) => {
+                if (getItemKey(item) !== itemKey) return item;
+                return { ...item, quantity: item.quantity + delta };
+            })
+            .filter((item) => item.quantity > 0);
         setLocalItems(updatedLocal);
 
-        // 2. Chuẩn bị req gửi API
-        const cartItemsRequest: ICartItemRequest[] = updatedLocal.map(item => ({
-            menuId: item.menuId,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-        }));
+        // 2. Chi gui phan chenh lech cua item duoc bam, tranh cong don item khac
+        const cartItemsRequest: ICartItemRequest[] = [{
+            menuId: currentItem.menuId,
+            quantity: delta,
+            unitPrice: currentItem.unitPrice,
+        }];
 
-        // 3. Gửi API
-        await syncCartWithServer(cartItemsRequest);
+        // 3. Gui API
+        setIsSyncing(true);
+        const ok = await syncCartWithServer(cartItemsRequest);
+        setIsSyncing(false);
+
+        if (!ok) {
+            await fetchCart();
+        }
     };
 
 
@@ -146,8 +157,9 @@ const CartPage = () => {
                     <div className="space-y-3 md:space-y-4">
                         {localItems.map((item) => {
                             const lineTotal = item.unitPrice * item.quantity;
+                            const itemKey = getItemKey(item);
                             return (
-                                <Card key={item.id} className="px-4 md:px-6 py-3 md:py-4">
+                                <Card key={itemKey} className="px-4 md:px-6 py-3 md:py-4">
                                     {/* Mobile Layout */}
                                     <div className="md:hidden space-y-3">
                                         {/* Product Info */}
@@ -176,8 +188,8 @@ const CartPage = () => {
                                                     variant="outline"
                                                     size="icon"
                                                     className="h-7 w-7 rounded-full"
-                                                    onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                                                    disabled={item.quantity <= 1}
+                                                    onClick={() => handleQuantityChange(itemKey, -1)}
+                                                    disabled={isSyncing}
                                                 >
                                                     <Minus className="w-3 h-3" />
                                                 </Button>
@@ -185,7 +197,8 @@ const CartPage = () => {
                                                 <Button
                                                     size="icon"
                                                     className="h-7 w-7 rounded-full bg-black hover:bg-black/80"
-                                                    onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                                                    onClick={() => handleQuantityChange(itemKey, 1)}
+                                                    disabled={isSyncing}
                                                 >
                                                     <Plus className="w-3 h-3 text-white" />
                                                 </Button>
@@ -229,8 +242,8 @@ const CartPage = () => {
                                                     variant="outline"
                                                     size="icon"
                                                     className="h-7 w-7 md:h-8 md:w-8 rounded-full"
-                                                    onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                                                    disabled={item.quantity <= 1}
+                                                    onClick={() => handleQuantityChange(itemKey, -1)}
+                                                    disabled={isSyncing}
                                                 >
                                                     <Minus className="w-3 h-3 md:w-4 md:h-4" />
                                                 </Button>
@@ -238,7 +251,8 @@ const CartPage = () => {
                                                 <Button
                                                     size="icon"
                                                     className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-black hover:bg-black/80"
-                                                    onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                                                    onClick={() => handleQuantityChange(itemKey, 1)}
+                                                    disabled={isSyncing}
                                                 >
                                                     <Plus className="w-3 h-3 md:w-4 md:h-4 text-white" />
                                                 </Button>
@@ -292,3 +306,4 @@ const CartPageWrapper = () => {
 };
 
 export default CartPageWrapper;
+

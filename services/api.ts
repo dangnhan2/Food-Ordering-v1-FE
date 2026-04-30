@@ -238,10 +238,6 @@ export const CreateVoucher = (code : string,  discountType : string, discountVal
     return axios.post<IBackendRes<IVoucher>>(`/api/admin/voucher`, {code, discountType, discountValue, maxDiscount, minOrderAmount, startDate, endDate, usageLimit, perUserLimit, isActive});
 }
 
-export const CancelOrder = (orderId : string, userId : string, reason : string, paymentMethod : number, bankBin :string, bankAccountNumber :string) => {
-    return axios.post<IBackendRes<string>>(`/api/common/order/${orderId}/cancel`, {userId, reason, paymentMethod, bankBin, bankAccountNumber});
-}
-
 export const EditVoucher = (id : string, code : string,  discountType : string, discountValue : number, maxDiscount : number, minOrderAmount : number, startDate : string, endDate : string, usageLimit : number, perUserLimit : number, isActive : boolean) => {
     return axios.put<IBackendRes<IVoucher>>(`/api/admin/voucher/${id}`, {code, discountType, discountValue, maxDiscount, minOrderAmount, startDate, endDate, usageLimit, perUserLimit, isActive});
 }
